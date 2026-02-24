@@ -2,6 +2,8 @@
 
 Set up a Kubernetes cluster on Arch Linux with CRI-O using Ansible.
 
+> **Note**: This project only works on Arch Linux.
+
 ## Prerequisites
 
 - SSH access to all nodes with root privileges
@@ -33,6 +35,9 @@ ansible-playbook -i hosts.ini 04a-install-longhorn-deps.yml --ask-become-pass
 
 # 6. Install apps (Longhorn, Cert-Manager, Ingress-Nginx)
 ansible-playbook -i hosts.ini 05-install-apps.yml --ask-become-pass
+
+# 7. Remove NoSchedule taint from control plane (allows scheduling pods on control plane)
+ansible-playbook -i hosts.ini 06-remove-noschedule.yml --ask-become-pass
 ```
 
 ## Playbooks
@@ -46,6 +51,7 @@ ansible-playbook -i hosts.ini 05-install-apps.yml --ask-become-pass
 | 4 | `04-install-cilium.yml` | Install Cilium CNI |
 | 4a | `04a-install-longhorn-deps.yml` | Install Longhorn dependencies (required before Longhorn) |
 | 5 | `05-install-apps.yml` | Install Longhorn, Cert-Manager, Ingress-Nginx |
+| 6 | `06-remove-noschedule.yml` | Remove NoSchedule taint from control plane |
 
 ## HA Multi-Master Setup
 

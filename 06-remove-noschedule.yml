@@ -1,0 +1,18 @@
+---
+- name: Remove NoSchedule taint from control plane nodes
+  hosts: main
+  become: true
+  tasks:
+    - name: Get control plane nodes
+      command: kubectl get nodes -l node-role.kubernetes.io/control-plane= -o jsonpath='{.items[*].metadata.name}'
+      register: control_plane_nodes
+      failed_when: false
+      changed_when: false
+
+    - name: Remove NoSchedule taint from control plane
+      command: "kubectl taint nodes {{ item }} node-role.kubernetes.io/control-plane:NoSchedule-"
+      loop: "{{ control_plane_nodes.stdout.split() }}"
+      when: 
+        - control_plane_nodes.rc == 0
+        - control_plane_nodes.stdout is defined
+        - control_plane_nodes.stdout | length > 0
