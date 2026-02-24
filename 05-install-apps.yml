@@ -1,0 +1,42 @@
+---
+- name: Install Longhorn, Cert-Manager and Nginx Ingress
+  hosts: all
+  become: true
+  tasks:
+    - name: Install helm
+      pacman:
+        name: helm
+        state: present
+
+    - name: Add Longhorn repo
+      command: helm repo add longhorn https://charts.longhorn.io
+      register: helm_repo_add
+      failed_when: helm_repo_add.rc != 0 and 'already exists' not in helm_repo_add.stderr
+
+    - name: Add Ingress-Nginx repo
+      command: helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      register: helm_repo_add
+      failed_when: helm_repo_add.rc != 0 and 'already exists' not in helm_repo_add.stderr
+
+    - name: Add Jetstack repo
+      command: helm repo add jetstack https://charts.jetstack.io
+      register: helm_repo_add
+      failed_when: helm_repo_add.rc != 0 and 'already exists' not in helm_repo_add.stderr
+
+    - name: Update helm repos
+      command: helm repo update
+
+    - name: Install Longhorn
+      command: >
+        helm upgrade longhorn longhorn/longhorn --namespace longhorn-system
+        --create-namespace --version 1.11.0 --install
+
+    - name: Install Cert-Manager
+      command: >
+        helm upgrade cert-manager jetstack/cert-manager --namespace cert-manager
+        --create-namespace --version v1.19.2 --set crds.enabled=true --install
+
+    - name: Install Ingress-Nginx
+      command: >
+        helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx
+        --namespace ingress-nginx --create-namespace

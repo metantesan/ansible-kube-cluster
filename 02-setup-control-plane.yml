@@ -1,0 +1,102 @@
+---
+- name: Setup Kubernetes control plane
+  hosts: main
+  become: true
+  tasks:
+    - name: Create kubeadm config directory
+      file:
+        path: /tmp/kube
+        state: directory
+
+    - name: Deploy kubeadm InitConfiguration
+      copy:
+        dest: /tmp/kube/init-config.yaml
+        content: |
+          apiVersion: kubeadm.k8s.io/v1beta4
+          bootstrapTokens:
+          - groups:
+            - system:bootstrappers:kubeadm:default-node-token
+            token: 58ebdp.343pabm4yuttftha
+            ttl: 24h0m0s
+            usages:
+            - signing
+            - authentication
+          kind: InitConfiguration
+          localAPIEndpoint:
+            advertiseAddress: 0.0.0.0
+            bindPort: 6443
+          nodeRegistration:
+            criSocket: unix:///var/run/crio/crio.sock
+            imagePullPolicy: IfNotPresent
+            imagePullSerial: true
+            name: node1
+            taints:
+            - effect: NoSchedule
+              key: node-role.kubernetes.io/control-plane
+          timeouts:
+            controlPlaneComponentHealthCheck: 4m0s
+            discovery: 5m0s
+            etcdAPICall: 2m0s
+            kubeletHealthCheck: 4m0s
+            kubernetesAPICall: 1m0s
+            tlsBootstrap: 5m0s
+            upgradeManifests: 5m0s
+          ---
+          apiServer: {}
+          apiVersion: kubeadm.k8s.io/v1beta4
+          caCertificateValidityPeriod: 87600h0m0s
+          certificateValidityPeriod: 8760h0m0s
+          certificatesDir: /etc/kubernetes/pki
+          clusterName: kubernetes
+          controllerManager: {}
+          dns: {}
+          encryptionAlgorithm: RSA-2048
+          etcd:
+            local:
+              dataDir: /var/lib/etcd
+          imageRepository: registry.k8s.io
+          kind: ClusterConfiguration
+          kubernetesVersion: v1.35.1
+          networking:
+            dnsDomain: cluster.local
+            podSubnet: 10.244.0.0/16
+            serviceSubnet: 10.96.0.0/12
+          proxy: {}
+          scheduler: {}
+
+    - name: Initialize Kubernetes cluster
+      command: kubeadm init --config /tmp/kube/init-config.yaml --upload-certs
+      register: kubeadm_init
+      retries: 3
+      delay: 10
+      until: kubeadm_init.rc == 0
+
+    - name: Create kubectl config directory
+      file:
+        path: /root/.kube
+        state: directory
+
+    - name: Copy admin kubeconfig
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /root/.kube/config
+        remote_src: yes
+
+    - name: Get join command for control plane
+      command: kubeadm token create --print-join-command
+      register: join_command
+      run_once: true
+
+    - name: Save join command to file
+      copy:
+        dest: /tmp/join-command.sh
+        content: |
+          #!/bin/bash
+          {{ join_command.stdout }}
+        mode: '0755'
+
+    - name: Fetch join command to local
+      fetch:
+        src: /tmp/join-command.sh
+        dest: join-command.sh
+        flat: yes

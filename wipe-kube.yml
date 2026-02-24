@@ -1,0 +1,33 @@
+---
+- name: Wipe Kubernetes data
+  hosts: kube
+  become: true
+  tasks:
+    - name: Stop kubelet service
+      systemd:
+        name: kubelet
+        state: stopped
+        enabled: no
+      ignore_errors: true
+
+    - name: Run kubeadm reset
+      command: kubeadm reset -f
+
+    - name: Remove kubelet data
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/lib/kubelet
+        - /var/lib/etcd
+        - /etc/kubernetes
+        - /var/lib/cni
+
+    - name: Remove CNI config
+      file:
+        path: /etc/cni/net.d
+        state: absent
+
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes

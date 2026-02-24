@@ -1,0 +1,57 @@
+# Kubernetes Cluster Inventory
+# Copy this file to hosts.ini and customize for your setup
+
+# All Kubernetes nodes (control plane + workers)
+[kube]
+kube1.kube.internal
+kube2.kube.internal
+kube3.kube.internal
+
+# Control plane nodes (for HA setup, add multiple)
+[main]
+kube1.kube.internal
+
+# Worker nodes (optional: separate from control plane)
+[workers]
+kube2.kube.internal
+kube3.kube.internal
+
+# Ansible configuration (applied to all nodes)
+[kube:vars]
+ansible_user=root
+ansible_ssh_private_key_file=~/.ssh/id_ed25519
+
+# =============================================================================
+# Example: Single node cluster
+# =============================================================================
+# [kube]
+# localhost ansible_connection=local
+#
+# [main]
+# localhost
+#
+# [kube:vars]
+# ansible_user=root
+
+# =============================================================================
+# Example: Multi-master HA cluster (supported)
+# =============================================================================
+# [kube]
+# kube1.example.com
+# kube2.example.com
+# kube3.example.com
+# worker1.example.com
+# worker2.example.com
+#
+# [main]
+# kube1.example.com
+# kube2.example.com
+# kube3.example.com
+#
+# [workers]
+# worker1.example.com
+# worker2.example.com
+#
+# [kube:vars]
+# ansible_user=ubuntu
+# ansible_ssh_private_key_file=~/.ssh/id_rsa

@@ -1,0 +1,40 @@
+---
+- name: Install Longhorn dependencies
+  hosts: kube
+  become: true
+  tasks:
+    - name: Install required packages for Longhorn
+      pacman:
+        name:
+          - bash
+          - curl
+          - grep
+          - gawk
+          - util-linux
+          - open-iscsi
+          - nfs-utils
+        state: present
+        update_cache: yes
+
+    - name: Enable and start iscsid daemon
+      systemd:
+        name: iscsid
+        state: started
+        enabled: yes
+
+    - name: Ensure iscsi modules are loaded
+      modprobe:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - iscsi_tcp
+        - libiscsi
+
+    - name: Add iscsi modules to load at boot
+      lineinfile:
+        path: /etc/modules-load.d/iscsi.conf
+        line: "{{ item }}"
+        create: yes
+      loop:
+        - iscsi_tcp
+        - libiscsi

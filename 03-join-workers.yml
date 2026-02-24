@@ -1,0 +1,23 @@
+---
+- name: Join worker nodes to cluster
+  hosts: kube:!main
+  become: true
+  vars:
+    join_command: ""
+  tasks:
+    - name: Fetch join command from master
+      slurp:
+        src: /tmp/join-command.sh
+      register: join_script
+      delegate_to: kube1.kube.internal
+
+    - name: Extract join command
+      set_fact:
+        join_command: "{{ (join_script.content | b64decode | regex_replace('#!/bin/bash\\n', '')).strip() }}"
+
+    - name: Join node to cluster
+      command: "{{ join_command }} --cri-socket unix:///var/run/crio/crio.sock"
+      register: join_result
+      retries: 3
+      delay: 10
+      until: join_result.rc == 0

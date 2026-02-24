@@ -1,0 +1,24 @@
+---
+- name: Install Cilium CNI
+  hosts: main
+  become: true
+  tasks:
+    - name: Install helm
+      pacman:
+        name: helm
+        state: present
+
+    - name: Add Cilium repo
+      command: helm repo add cilium https://helm.cilium.io/
+      register: helm_repo_add
+      failed_when: helm_repo_add.rc != 0 and 'already exists' not in helm_repo_add.stderr
+
+    - name: Update helm repos
+      command: helm repo update
+
+    - name: Install Cilium with Helm
+      command: >
+        helm upgrade --install cilium cilium/cilium --namespace kube-system
+        --set l2announcements.enabled=true
+        --set kubeProxyReplacement=true
+        --create-namespace

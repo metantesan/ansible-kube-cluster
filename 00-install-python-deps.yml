@@ -1,0 +1,15 @@
+---
+- name: Install Python dependencies for Ansible modules
+  hosts: kube
+  become: true
+  tasks:
+    - name: Update pacman repositories and packages
+      ansible.builtin.pacman:
+        update_cache: yes
+        upgrade: yes
+    - name: Install Python dependencies for Ansible
+      pacman:
+        name:
+          - python-yaml
+          - python-kubernetes
+        state: present
