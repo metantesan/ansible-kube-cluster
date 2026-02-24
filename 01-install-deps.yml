@@ -47,6 +47,18 @@
         enabled: yes
         state: started
 
+    - name: Configure CRI-O registries
+      blockinfile:
+        path: /etc/containers/registries.conf
+        marker: "# {mark} ANSIBLE MANAGED BLOCK"
+        block: |
+          unqualified-search-registries = ["docker.io"]
+
+    - name: Restart CRI-O
+      systemd:
+        name: crio
+        state: restarted
+
     - name: Install Kubernetes packages
       pacman:
         name:
