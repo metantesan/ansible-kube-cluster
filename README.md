@@ -114,4 +114,4 @@ ansible-playbook -i hosts.ini wipe-kube.yml --ask-become-pass
 
 ## Support
 
-For on-prem Kubernetes help, reach me at: t.me/metantesan
+For on-prem Kubernetes help, reach me at: https://t.me/metantesan
