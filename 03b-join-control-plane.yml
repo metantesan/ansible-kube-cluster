@@ -1,12 +1,13 @@
 ---
 - name: Join additional control plane nodes to cluster (HA)
-  hosts: main
+  hosts: main:!kube_admin
   become: true
   tasks:
     - name: Fetch join command for control plane from first master
       slurp:
         src: /tmp/join-command.sh
       register: join_script
+      delegate_to: "{{ groups['kube_admin'][0] }}"
       run_once: true
 
     - name: Extract join command

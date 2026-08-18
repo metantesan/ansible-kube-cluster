@@ -1,0 +1,44 @@
+---
+- name: Install Cilium CNI
+  hosts: kube_admin
+  become: true
+  tasks:
+    - name: Install helm (Arch)
+      pacman:
+        name: helm
+        state: present
+      when: ansible_os_family == 'Archlinux'
+
+    - name: Install helm prerequisites (RPM/Deb)
+      package:
+        name:
+          - curl
+          - tar
+        state: present
+      when: ansible_os_family in ['RedHat', 'Debian']
+
+    - name: Download helm install script (RPM/Deb)
+      get_url:
+        url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+        dest: /tmp/get-helm-3
+        mode: '0700'
+      when: ansible_os_family in ['RedHat', 'Debian']
+
+    - name: Install helm (RPM/Deb)
+      command: /tmp/get-helm-3
+      when: ansible_os_family in ['RedHat', 'Debian']
+
+    - name: Add Cilium repo
+      command: helm repo add cilium https://helm.cilium.io/
+      register: helm_repo_add
+      failed_when: helm_repo_add.rc != 0 and 'already exists' not in helm_repo_add.stderr
+
+    - name: Update helm repos
+      command: helm repo update
+
+    - name: Install Cilium with Helm
+      command: >
+        helm upgrade --install cilium cilium/cilium --namespace kube-system
+        --set l2announcements.enabled=true
+        --set kubeProxyReplacement=true
+        --create-namespace

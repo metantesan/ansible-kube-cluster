@@ -1,6 +1,6 @@
 ---
 - name: Setup Kubernetes control plane
-  hosts: main
+  hosts: kube_admin
   become: true
   tasks:
     - name: Create kubeadm config directory

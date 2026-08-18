@@ -1,0 +1,17 @@
+---
+- name: Install Longhorn
+  hosts: kube_admin
+  become: true
+  tasks:
+    - name: Add Longhorn repo
+      command: helm repo add longhorn https://charts.longhorn.io
+      register: helm_repo_add
+      failed_when: helm_repo_add.rc != 0 and 'already exists' not in helm_repo_add.stderr
+
+    - name: Update helm repos
+      command: helm repo update
+
+    - name: Install Longhorn
+      command: >
+        helm upgrade longhorn longhorn/longhorn --namespace longhorn-system
+        --create-namespace --version 1.11.0 --install

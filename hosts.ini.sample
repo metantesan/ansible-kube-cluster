@@ -8,7 +8,19 @@ kube2.kube.internal
 kube3.kube.internal
 
 # Control plane nodes (for HA setup, add multiple)
+# Used by 03b-join-control-plane.yml to join extra masters and
+# 06-remove-noschedule.yml to untaint control planes.
 [main]
+kube1.kube.internal
+kube2.kube.internal
+kube3.kube.internal
+
+# The single "operator" node: the first control plane.
+# This is the ONLY node that runs kubeadm init and every kubectl/helm install
+# (02-setup-control-plane, cni/, storage/, loadbalancer/, 05-install-apps).
+# It must hold the admin kubeconfig (/root/.kube/config).
+# Keep exactly ONE host here, even in a multi-master HA setup.
+[kube_admin]
 kube1.kube.internal
 
 # Worker nodes (optional: separate from control plane)
@@ -30,6 +42,9 @@ ansible_ssh_private_key_file=~/.ssh/id_ed25519
 # [main]
 # localhost
 #
+# [kube_admin]
+# localhost
+#
 # [kube:vars]
 # ansible_user=root
 
@@ -43,10 +58,13 @@ ansible_ssh_private_key_file=~/.ssh/id_ed25519
 # worker1.example.com
 # worker2.example.com
 #
-# [main]
+# [main]           # all control planes
 # kube1.example.com
 # kube2.example.com
 # kube3.example.com
+#
+# [kube_admin]     # ONLY the first control plane (kubectl/helm run here)
+# kube1.example.com
 #
 # [workers]
 # worker1.example.com

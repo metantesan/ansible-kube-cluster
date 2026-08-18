@@ -1,0 +1,18 @@
+---
+- name: Install Local Path Provisioner
+  hosts: kube_admin
+  become: true
+  vars:
+    local_path_version: v0.0.37
+    local_path_manifest: /tmp/local-path-storage.yaml
+  tasks:
+    - name: Download Local Path Provisioner manifest
+      get_url:
+        url: "https://raw.githubusercontent.com/rancher/local-path-provisioner/{{ local_path_version }}/deploy/local-path-storage.yaml"
+        dest: "{{ local_path_manifest }}"
+        mode: '0644'
+
+    - name: Apply Local Path Provisioner manifest
+      command: kubectl apply -f {{ local_path_manifest }}
+      register: apply_result
+      changed_when: "'unchanged' not in apply_result.stdout"

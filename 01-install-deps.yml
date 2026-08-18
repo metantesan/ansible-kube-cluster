@@ -2,6 +2,9 @@
 - name: Install Kubernetes dependencies
   hosts: kube
   become: true
+  vars:
+    kubernetes_version: "v1.35"
+    cri_o_version: "v1.35"
   tasks:
     - name: Disable swap
       command: swapoff -a
@@ -34,18 +37,148 @@
     - name: Apply sysctl settings
       command: sysctl --system
 
-    - name: Install CRI-O packages
+    # =========================================================================
+    # Arch Linux (pacman)
+    # =========================================================================
+    - name: Install CRI-O packages (Arch)
       pacman:
         name:
           - cri-o
           - crictl
         state: present
+      when: ansible_os_family == 'Archlinux'
 
+    # =========================================================================
+    # RedHat (RHEL, Fedora, CentOS, Rocky, AlmaLinux) - CRI-O website mirrors
+    # =========================================================================
+    - name: Add Kubernetes RPM repository
+      yum_repository:
+        name: kubernetes
+        description: Kubernetes
+        baseurl: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/rpm/"
+        enabled: true
+        gpgcheck: true
+        gpgkey: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/rpm/repodata/repomd.xml.key"
+      when: ansible_os_family == 'RedHat'
+
+    - name: Add CRI-O RPM repository
+      yum_repository:
+        name: cri-o
+        description: CRI-O
+        baseurl: "https://download.opensuse.org/repositories/isv:/cri-o:/stable:/{{ cri_o_version }}/rpm/"
+        enabled: true
+        gpgcheck: true
+        gpgkey: "https://download.opensuse.org/repositories/isv:/cri-o:/stable:/{{ cri_o_version }}/rpm/repodata/repomd.xml.key"
+      when: ansible_os_family == 'RedHat'
+
+    - name: Install container-selinux dependency (RPM)
+      dnf:
+        name: container-selinux
+        state: present
+        update_cache: true
+      when: ansible_os_family == 'RedHat'
+
+    - name: Install CRI-O and Kubernetes packages (RPM)
+      dnf:
+        name:
+          - cri-o
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: present
+      when: ansible_os_family == 'RedHat'
+
+    # =========================================================================
+    # Debian (Debian, Ubuntu) - CRI-O website mirrors
+    # =========================================================================
+    - name: Install apt repository prerequisites (Deb)
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+        state: present
+        update_cache: true
+      when: ansible_os_family == 'Debian'
+
+    - name: Create apt keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+      when: ansible_os_family == 'Debian'
+
+    - name: Download Kubernetes apt key
+      get_url:
+        url: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/deb/Release.key"
+        dest: /tmp/kubernetes-Release.key
+      when: ansible_os_family == 'Debian'
+
+    - name: Add Kubernetes apt keyring
+      ansible.builtin.command:
+        cmd: gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg /tmp/kubernetes-Release.key
+        creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      when: ansible_os_family == 'Debian'
+
+    - name: Add Kubernetes apt repository
+      copy:
+        dest: /etc/apt/sources.list.d/kubernetes.list
+        content: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/deb/ /\n"
+      when: ansible_os_family == 'Debian'
+
+    - name: Download CRI-O apt key
+      get_url:
+        url: "https://download.opensuse.org/repositories/isv:/cri-o:/stable:/{{ cri_o_version }}/deb/Release.key"
+        dest: /tmp/cri-o-Release.key
+      when: ansible_os_family == 'Debian'
+
+    - name: Add CRI-O apt keyring
+      ansible.builtin.command:
+        cmd: gpg --dearmor -o /etc/apt/keyrings/cri-o-apt-keyring.gpg /tmp/cri-o-Release.key
+        creates: /etc/apt/keyrings/cri-o-apt-keyring.gpg
+      when: ansible_os_family == 'Debian'
+
+    - name: Add CRI-O apt repository
+      copy:
+        dest: /etc/apt/sources.list.d/cri-o.list
+        content: "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://download.opensuse.org/repositories/isv:/cri-o:/stable:/{{ cri_o_version }}/deb/ /\n"
+      when: ansible_os_family == 'Debian'
+
+    - name: Fix apt keyring permissions
+      file:
+        path: "{{ item }}"
+        mode: '0644'
+      loop:
+        - /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+        - /etc/apt/keyrings/cri-o-apt-keyring.gpg
+      when: ansible_os_family == 'Debian'
+
+    - name: Install CRI-O and Kubernetes packages (Deb)
+      apt:
+        name:
+          - cri-o
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: present
+        update_cache: true
+      when: ansible_os_family == 'Debian'
+
+    # =========================================================================
+    # Common
+    # =========================================================================
     - name: Enable and start CRI-O
       systemd:
         name: crio
         enabled: yes
         state: started
+
+    - name: Check if registries.conf already defines search registries
+      command: grep -q "unqualified-search-registries" /etc/containers/registries.conf
+      register: registries_check
+      changed_when: false
+      failed_when: registries_check.rc not in [0, 1]
 
     - name: Configure CRI-O registries
       blockinfile:
@@ -53,24 +186,38 @@
         marker: "# {mark} ANSIBLE MANAGED BLOCK"
         block: |
           unqualified-search-registries = ["docker.io"]
+      when: registries_check.rc != 0
 
     - name: Restart CRI-O
       systemd:
         name: crio
         state: restarted
 
-    - name: Install Kubernetes packages
-      pacman:
-        name:
-          - kubelet
-          - kubeadm
-          - kubectl
-        state: present
-
     - name: Enable kubelet
       systemd:
         name: kubelet
         enabled: yes
 
-    - name: Hold Kubernetes packages
+    - name: Hold Kubernetes packages (Arch)
       command: pacman -D --asexplicit kubelet kubeadm kubectl
+      when: ansible_os_family == 'Archlinux'
+
+    - name: Hold Kubernetes packages (Deb)
+      apt:
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: held
+      when: ansible_os_family == 'Debian'
+
+    - name: Install dnf versionlock plugin (RPM)
+      dnf:
+        name: python3-dnf-plugin-versionlock
+        state: present
+      ignore_errors: true
+      when: ansible_os_family == 'RedHat'
+
+    - name: Hold Kubernetes packages (RPM)
+      command: dnf versionlock add kubelet kubeadm kubectl
+      when: ansible_os_family == 'RedHat'

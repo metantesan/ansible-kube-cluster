@@ -1,0 +1,25 @@
+# Cilium Load Balancer IP pool + L2 announcement policy
+#
+# Requires Cilium installed with l2announcements enabled
+# (see cni/cilium/install-cilium.yml).
+#
+# Edit the CIDR and interface below before applying:
+#   kubectl apply -f cilium-ip-pool.yaml
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: lb-pool
+spec:
+  cidrs:
+    - cidr: "192.168.1.0/24"
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: lb-policy
+spec:
+  # Interface(s) used to announce the service IPs. Adjust to your node NIC.
+  interfaces:
+    - eth0
+  loadBalancerIPs: true

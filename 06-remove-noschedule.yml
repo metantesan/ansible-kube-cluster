@@ -1,6 +1,6 @@
 ---
 - name: Remove NoSchedule taint from control plane nodes
-  hosts: main
+  hosts: kube_admin
   become: true
   tasks:
     - name: Get control plane nodes

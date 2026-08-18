@@ -1,0 +1,75 @@
+---
+- name: Install Longhorn dependencies
+  hosts: kube
+  become: true
+  tasks:
+    - name: Install required packages for Longhorn (Arch)
+      pacman:
+        name:
+          - bash
+          - curl
+          - grep
+          - gawk
+          - util-linux
+          - open-iscsi
+          - nfs-utils
+        state: present
+        update_cache: yes
+      when: ansible_os_family == 'Archlinux'
+
+    - name: Install required packages for Longhorn (Debian/Ubuntu)
+      apt:
+        name:
+          - bash
+          - curl
+          - grep
+          - gawk
+          - util-linux
+          - open-iscsi
+          - nfs-common
+        state: present
+        update_cache: yes
+      when: ansible_os_family == 'Debian'
+
+    - name: Install required packages for Longhorn (RHEL/Fedora)
+      dnf:
+        name:
+          - bash
+          - curl
+          - grep
+          - gawk
+          - util-linux
+          - iscsi-initiator-utils
+          - nfs-utils
+        state: present
+        update_cache: yes
+      when: ansible_os_family == 'RedHat'
+
+    - name: Set iSCSI initiator name (RHEL/Fedora)
+      copy:
+        dest: /etc/iscsi/initiatorname.iscsi
+        content: "InitiatorName=iqn.2026-08.com.example:kube\n"
+      when: ansible_os_family == 'RedHat'
+
+    - name: Enable and start iscsid daemon
+      systemd:
+        name: iscsid
+        state: started
+        enabled: yes
+
+    - name: Ensure iscsi modules are loaded
+      modprobe:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - iscsi_tcp
+        - libiscsi
+
+    - name: Add iscsi modules to load at boot
+      lineinfile:
+        path: /etc/modules-load.d/iscsi.conf
+        line: "{{ item }}"
+        create: yes
+      loop:
+        - iscsi_tcp
+        - libiscsi

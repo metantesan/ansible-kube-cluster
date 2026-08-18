@@ -9,7 +9,7 @@
       slurp:
         src: /tmp/join-command.sh
       register: join_script
-      delegate_to: kube1.kube.internal
+      delegate_to: "{{ groups['kube_admin'][0] }}"
 
     - name: Extract join command
       set_fact:

@@ -1,0 +1,34 @@
+---
+- name: Install Flux (GitOps helm-controller)
+  hosts: kube_admin
+  become: true
+  tasks:
+    - name: Install helm (Arch)
+      pacman:
+        name: helm
+        state: present
+      when: ansible_os_family == 'Archlinux'
+
+    - name: Install helm prerequisites (RPM/Deb)
+      package:
+        name:
+          - curl
+          - tar
+        state: present
+      when: ansible_os_family in ['RedHat', 'Debian']
+
+    - name: Download helm install script (RPM/Deb)
+      get_url:
+        url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+        dest: /tmp/get-helm-3
+        mode: '0700'
+      when: ansible_os_family in ['RedHat', 'Debian']
+
+    - name: Install helm (RPM/Deb)
+      command: /tmp/get-helm-3
+      when: ansible_os_family in ['RedHat', 'Debian']
+
+    - name: Install Flux with Helm
+      command: >
+        helm upgrade --install flux oci://ghcr.io/fluxcd-community/charts/flux2
+        --namespace flux-system --create-namespace
