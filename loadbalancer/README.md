@@ -37,3 +37,6 @@ kubectl apply -f loadbalancer/cilium/cilium-ip-pool.yaml
 
 > **Note**: do NOT run MetalLB and Cilium LB-IPAM at the same time.
 
+> **Note**: Cilium LB-IPAM requires the Cilium CNI. If you installed **Flannel**
+> as your CNI, use **MetalLB** instead.
+

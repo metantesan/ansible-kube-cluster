@@ -90,7 +90,7 @@ mutually exclusive:
 | Option | Playbook | Notes |
 |--------|----------|-------|
 | [Cilium](cni/README.md) | `cni/cilium/install-cilium.yml` | eBPF, kube-proxy replacement, L2 announcements |
-| [Flannel](cni/README.md) | `cni/flannel/install-flannel.yml` | Simple VXLAN overlay, uses `10.244.0.0/16` pod CIDR |
+| [Flannel](cni/README.md) | `cni/flannel/install-flannel.yml` | Simple VXLAN overlay, uses `10.244.0.0/16` pod CIDR; pair with **MetalLB** for LoadBalancer services |
 
 ## Apps & Flux
 
@@ -136,6 +136,9 @@ Give `LoadBalancer`-type services real IPs. Pick **one** from the
 |--------|-----------|-------|
 | [MetalLB](loadbalancer/README.md) | `loadbalancer/metallb/install-metallb.yml` | ARP/L2 (or BGP) announcements; works with any CNI |
 | [Cilium LB-IPAM](loadbalancer/README.md) | `loadbalancer/cilium/cilium-ip-pool.yaml` | Cilium's own LB IP pool + L2 announcements (Cilium CNI only) |
+
+> **Note**: if your CNI is **Flannel**, use **MetalLB** — Cilium LB-IPAM
+> requires the Cilium CNI.
 
 ## HA Multi-Master Setup
 
@@ -190,6 +193,24 @@ the admin kubeconfig. It is the only node that runs `kubeadm init` and all
 `kubectl`/`helm` installs (playbooks 02, 06, `cni/`, `storage/`, `loadbalancer/`,
 `flux/`). Even in a multi-master HA setup, those never run on every control
 plane. `[main]` lists all control planes and is used for the HA join (`03b`).
+
+## Optional: CRI-O proxy & mirrors
+
+**Proxy** — if your nodes pull images through a proxy, set the `proxy_url` /
+`no_proxy` vars in `configure-crio-proxy.yml` and run it after
+`01-install-deps.yml` (CRI-O must be installed first):
+
+```bash
+ansible-playbook -i hosts.ini configure-crio-proxy.yml --ask-become-pass
+```
+
+**Mirrors** — if you want CRI-O to pull via registry mirrors (docker.io,
+ghcr.io, mcr.microsoft.com, quay.io, registry.k8s.io), edit the mirror URLs in
+`configure-crio-mirrors.yml` and run it after `01-install-deps.yml`:
+
+```bash
+ansible-playbook -i hosts.ini configure-crio-mirrors.yml --ask-become-pass
+```
 
 ## Troubleshooting
 

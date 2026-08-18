@@ -27,5 +27,8 @@ Deploys Flannel to `kube-flannel` using the `10.244.0.0/16` pod CIDR, matching
 the kubeadm `podSubnet` from `02-setup-control-plane.yml`. If you change the pod
 CIDR there, set `pod_cidr` in the playbook accordingly.
 
+> **Note**: If you install Flannel, use **MetalLB** for LoadBalancer services —
+> Cilium LB-IPAM requires the Cilium CNI (see `loadbalancer/`).
+
 > **Note**: Do NOT run both. Cilium with `kubeProxyReplacement=true` and Flannel
 > cannot coexist in the same cluster.

@@ -1,0 +1,32 @@
+---
+- name: Configure CRI-O proxy for pulling images (optional)
+  hosts: kube
+  become: true
+  vars:
+    proxy_url: "socks5h://PROXY_HOST:PROXY_PORT"
+    no_proxy: "localhost,127.0.0.1,10.244.0.0/16,10.96.0.0/12"
+  tasks:
+    - name: Create CRI-O systemd drop-in directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/crio.service.d
+        state: directory
+        mode: '0755'
+
+    - name: Configure HTTP proxy for CRI-O
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/crio.service.d/http-proxy.conf
+        content: |
+          [Service]
+          Environment="HTTP_PROXY={{ proxy_url }}"
+          Environment="HTTPS_PROXY={{ proxy_url }}"
+          Environment="NO_PROXY={{ no_proxy }}"
+        mode: '0644'
+
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Restart CRI-O service
+      ansible.builtin.systemd:
+        name: crio
+        state: restarted

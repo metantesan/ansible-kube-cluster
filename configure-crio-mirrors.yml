@@ -1,0 +1,49 @@
+---
+- name: Configure CRI-O registry mirrors (optional)
+  hosts: kube
+  become: true
+  tasks:
+    - name: Create CRI-O registries drop-in directory
+      ansible.builtin.file:
+        path: /etc/containers/registries.conf.d
+        state: directory
+        mode: '0755'
+
+    - name: Configure CRI-O registry mirrors
+      ansible.builtin.copy:
+        dest: /etc/containers/registries.conf.d/mirrors.conf
+        content: |
+          [[registry]]
+          prefix = "docker.io"
+          location = "docker.io"
+          [[registry.mirror]]
+          location = "docker-mirror.liara.ir"
+
+          [[registry]]
+          prefix = "ghcr.io"
+          location = "ghcr.io"
+          [[registry.mirror]]
+          location = "ghcr-mirror.liara.ir"
+
+          [[registry]]
+          prefix = "mcr.microsoft.com"
+          location = "mcr.microsoft.com"
+          [[registry.mirror]]
+          location = "mcr-mirror.liara.ir"
+
+          [[registry]]
+          prefix = "quay.io"
+          location = "quay.io"
+          [[registry.mirror]]
+          location = "quay-mirror.liara.ir"
+
+          [[registry]]
+          prefix = "registry.k8s.io"
+          location = "registry.k8s.io"
+          [[registry.mirror]]
+          location = "k8s-mirror.liara.ir"
+
+    - name: Restart CRI-O service
+      ansible.builtin.systemd:
+        name: crio
+        state: restarted
