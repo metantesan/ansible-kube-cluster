@@ -9,6 +9,7 @@ and `HelmRelease`.
 |-------|-----|-----------|-----------|
 | [Ingress](ingress/README.md) | Nginx | `apps/ingress/nginx/` | `ingress-nginx` |
 | [Ingress](ingress/README.md) | Traefik | `apps/ingress/traefik/` | `traefik` |
+| [Gateway](gateway/README.md) | Envoy Gateway | `apps/gateway/envoy-gateway/` | `envoy-gateway-system` |
 | TLS | Cert-Manager | `apps/cert-manager/` | `cert-manager` |
 
 > **Warning**: do NOT run Traefik and Nginx at the same time — they are both
@@ -32,6 +33,11 @@ kubectl apply -f apps/ingress/nginx/helmrelease.yaml
 # Ingress: Traefik
 kubectl apply -f apps/ingress/traefik/helmrepository.yaml
 kubectl apply -f apps/ingress/traefik/helmrelease.yaml
+
+# Gateway API: Envoy Gateway
+kubectl apply -f apps/gateway/envoy-gateway/ocirepository.yaml
+kubectl apply -f apps/gateway/envoy-gateway/helmrelease.yaml
+kubectl apply -f apps/gateway/envoy-gateway/gatewayclass.yaml
 
 # TLS: Cert-Manager
 kubectl apply -f apps/cert-manager/helmrepository.yaml

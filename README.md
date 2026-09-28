@@ -103,6 +103,7 @@ is the exception and is installed first via playbook.
 |-------|-----|-----------|-----------|
 | Ingress | Nginx | `apps/ingress/nginx/` | `ingress-nginx` |
 | Ingress | Traefik | `apps/ingress/traefik/` | `traefik` |
+| Gateway | Envoy Gateway | `apps/gateway/envoy-gateway/` | `envoy-gateway-system` |
 | TLS | Cert-Manager | `apps/cert-manager/` | `cert-manager` |
 
 > **Warning**: do NOT run Traefik and Nginx at the same time (both are Ingress
@@ -115,6 +116,11 @@ ansible-playbook -i hosts.ini flux/install-flux.yml --ask-become-pass
 # Then apply the apps you want (kubectl from the kube_admin node)
 kubectl apply -f apps/ingress/nginx/helmrepository.yaml
 kubectl apply -f apps/ingress/nginx/helmrelease.yaml
+
+# Gateway API: Envoy Gateway
+kubectl apply -f apps/gateway/envoy-gateway/ocirepository.yaml
+kubectl apply -f apps/gateway/envoy-gateway/helmrelease.yaml
+kubectl apply -f apps/gateway/envoy-gateway/gatewayclass.yaml
 ```
 
 ## Storage Options

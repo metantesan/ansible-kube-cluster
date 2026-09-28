@@ -9,10 +9,8 @@ by your chosen load balancer option in `../../loadbalancer/`).
 | [Nginx](nginx/) | `apps/ingress/nginx/` | `ingress-nginx` | NGINX-based ingress controller |
 | [Traefik](traefik/) | `apps/ingress/traefik/` | `traefik` | Go-based ingress controller |
 
-> **Warning**: do NOT run Nginx and Traefik at the same time — they are both
-> Ingress controllers and will fight over the same `Ingress` objects and the
-> 80/443 ports on your LoadBalancer. Pick one, unless you know what you are
-> doing.
+> **Warning**: install only one controller for a given public 80/443 address.
+> Nginx and Traefik each expose traffic through a `LoadBalancer` service.
 
 ## Install one ingress controller
 
