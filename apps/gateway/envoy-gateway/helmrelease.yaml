@@ -15,7 +15,8 @@ spec:
         name: envoy-gateway
       interval: 1m
   targetNamespace: envoy-gateway-system
-  createNamespace: true
+  install:
+    createNamespace: true
   values:
     crds:
       enabled: true

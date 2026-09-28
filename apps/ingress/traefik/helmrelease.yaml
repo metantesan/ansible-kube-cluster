@@ -13,7 +13,8 @@ spec:
         name: traefik
       interval: 1m
   targetNamespace: traefik
-  createNamespace: true
+  install:
+    createNamespace: true
   values:
     service:
       type: LoadBalancer

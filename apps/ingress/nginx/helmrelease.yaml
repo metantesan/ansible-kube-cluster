@@ -13,4 +13,5 @@ spec:
         name: ingress-nginx
       interval: 1m
   targetNamespace: ingress-nginx
-  createNamespace: true
+  install:
+    createNamespace: true

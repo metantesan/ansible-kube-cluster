@@ -17,7 +17,8 @@ spec:
         name: jetstack
       interval: 1m
   targetNamespace: cert-manager
-  createNamespace: true
+  install:
+    createNamespace: true
   values:
     crds:
       enabled: true
