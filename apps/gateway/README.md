@@ -7,7 +7,7 @@ managed `LoadBalancer` proxy services.
 ## Envoy Gateway
 
 ```bash
-kubectl apply -f apps/gateway/envoy-gateway/ocirepository.yaml
+kubectl apply -f apps/gateway/envoy-gateway/helmrepository.yaml
 kubectl apply -f apps/gateway/envoy-gateway/helmrelease.yaml
 kubectl apply -f apps/gateway/envoy-gateway/gatewayclass.yaml
 ```

@@ -35,7 +35,7 @@ kubectl apply -f apps/ingress/traefik/helmrepository.yaml
 kubectl apply -f apps/ingress/traefik/helmrelease.yaml
 
 # Gateway API: Envoy Gateway
-kubectl apply -f apps/gateway/envoy-gateway/ocirepository.yaml
+kubectl apply -f apps/gateway/envoy-gateway/helmrepository.yaml
 kubectl apply -f apps/gateway/envoy-gateway/helmrelease.yaml
 kubectl apply -f apps/gateway/envoy-gateway/gatewayclass.yaml
 

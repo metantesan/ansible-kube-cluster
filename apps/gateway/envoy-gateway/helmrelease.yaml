@@ -11,7 +11,7 @@ spec:
       chart: gateway-helm
       version: v1.9.1
       sourceRef:
-        kind: OCIRepository
+        kind: HelmRepository
         name: envoy-gateway
       interval: 1m
   targetNamespace: envoy-gateway-system
